@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ContinuationIndentWidth: 2
+ColumnLimit: 80
+ReflowComments: false
