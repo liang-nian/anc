@@ -1,10 +1,6 @@
 # LMS
 
-维纳滤波在统计量准确的前提下可以直接求得最优解，但是实际的 ANC 系统几乎不会选它当核心算法。耳机和车载都把时延卡得很死，核心算法不能有太大的算力消耗。而维纳滤波计算自相关元素就已经涉及到大量的内积，更何况后面还有矩阵运算。
-
-那么，能不能像维纳滤波那一章的仿真一样，不再做在线流式更新，直接拿全部数据做一次离线计算？目标系统若是理想的线性时不变系统，那么确实是可以的，但实际应用中并非如此。自适应滤波器的建模对象是噪声传递路径，可是车上的噪声传递路径包含吸振器，悬架等元件，其特性就是会随着激励发生变化的。所以 ANC 的核心算法必须能在线自适应更新。
-
-我们必须找到一个满足以上要求的核心算法。换个角度思考，维纳滤波是令梯度为零，直接得到这个凸问题的最优解，如果我们不再直接求这个最优解，而是用梯度下降，实时地逼近它呢？由此得到的就是 LMS 算法。
+在维纳滤波的补充里面提到了，我们需要一个算力小并且可以实时在线更新的算法作为ANC量产的核心。换个角度思考，维纳滤波是令梯度为零，直接得到这个凸问题的最优解，如果我们不再直接求这个最优解，而是用梯度下降，实时地逼近它呢？由此得到的就是 LMS 算法。
 
 ps:公式推导只是按照自己的理解进行简化版的推导，也许并不严谨。
 
@@ -26,7 +22,7 @@ $$
 \end{aligned}
 $$
 
-$\mathbf{p}$ 和 $\mathbf{R}$ 仍然是期望，这么看似乎并没有减少计算量。但是大佬们给出了一个推导结论，在滤波器系数固定的情况下，滤波器系数可以穿透期望公式，从而使得瞬时梯度成为真实梯度的无偏估计，所以我们可以将梯度简化为实时值的计算
+$\mathbf{p}$ 和 $\mathbf{R}$ 仍然是期望，这么看似乎并没有减少计算量。但是在滤波器系数固定的情况下，滤波器系数可以穿透期望公式，从而使得瞬时梯度成为真实梯度的无偏估计，所以我们可以将梯度简化为实时值的计算
 
 $$
 \hat{\mathbf{p}}(n)=d(n)\mathbf{x}(n),\qquad
@@ -134,6 +130,8 @@ $$
 
 ## 3. 仿真
 
+码仓：https://github.com/liang-nian/anc.git
+
 ### 3.1 函数对应的公式
 
 `LmsCreate` 按 $P$、$Q$、$M$ 和步长 $\mu$ 建状态。系数和每路参考的延迟线都置 0。系数按下标 $(qP+p)M+k$ 排，$k=0$ 是当前抽头。
@@ -202,7 +200,7 @@ $$
 
 ![02 多通道 LMS](../output/sim/02_lms.png)
 
-波形取记录末尾 $150\,\mathrm{ms}$。功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率。功率谱取末尾 $4\,\mathrm{s}$。NMSE 用末尾 $2\,\mathrm{s}$。
+波形取记录末尾 $150\,\mathrm{ms}$。功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率，功率谱取末尾 $4\,\mathrm{s}$，NMSE 用末尾 $2\,\mathrm{s}$。
 
 **「两路参考信号」**：黑线是通道 0，大约在 $-2.4$ 到 $3$；蓝线是通道 1，大约在 $-1.7$ 到 $2.4$。阶次的起伏还在，上面叠着各自的白噪声。
 
@@ -216,14 +214,138 @@ $$
 
 **「通道 0 的阶次被消掉之后，剩下的谱就是纯净目标信号」**：紫线在 40、80、120、160 Hz 有四个峰，大约 41、38、34、30 dB，最高约 41 dB。峰之间的宽带底大约 14 dB，里面有参考白噪声经主路径之后的分量。红线和青绿虚线贴在约 11 dB 的一条平线上，四个峰消失。
 
-## 4. 总结
+## 4. 补充
 
-LMS 算法也有着许多有价值的特性，最为经典的就是特征值特性，通过分析梯度下降法的误差收敛条件可以得到步长的约束公式
+### 4.1 特征值与步长
+
+LMS 里面特征值对收敛的影响是十分关键的特性，其结论为想要算法收敛，步长必须要落在
 
 $$
 0<\mu<\frac{2}{\lambda_{\max}}
 $$
 
-因此，自相关矩阵的特征值决定了步长的合法范围，以及收敛的速度，显然，最大特征值和最小特征值越接近，越有利于算法的收敛，这个特性也为实际量产中部分优化手段提供了理论基础。
+$\lambda_{\max}$ 是参考抽头自相关矩阵 $\mathbf{R}$ 的最大特征值。把期望形式的更新写成
 
-LMS 算法已经满足了基本的计算需求，但是仍然缺失了一部分数学建模，目前的模型假设来源于维纳滤波，在维纳滤波里面，我们直接将参考信号滤波后的结果视作降噪信号，但实际上在物理系统中，这个声音需要扬声器来播放，而扬声器传播到降噪点才获得降噪信号，所以必须将这段传递路径考虑进去重新进行建模。
+$$
+\mathbf{w}(n+1)=\mathbf{w}(n)+\mu\bigl(\mathbf{p}-\mathbf{R}\mathbf{w}(n)\bigr)
+$$
+
+维纳解满足 $\mathbf{R}\mathbf{w}_\star=\mathbf{p}$。令误差 $\mathbf{v}(n)=\mathbf{w}(n)-\mathbf{w}_\star$，代进去：
+
+$$
+\begin{aligned}
+\mathbf{v}(n+1)
+&=\mathbf{v}(n)+\mu\bigl(\mathbf{p}-\mathbf{R}(\mathbf{v}(n)+\mathbf{w}_\star)\bigr)\\
+&=\mathbf{v}(n)-\mu\mathbf{R}\mathbf{v}(n)\\
+&=(\mathbf{I}-\mu\mathbf{R})\mathbf{v}(n)
+\end{aligned}
+$$
+
+$\mathbf{R}$ 和维纳滤波那一章一样，对称正定，考虑特征向量与特征值得到 $\mathbf{R}=\mathbf{Q}\boldsymbol{\Lambda}\mathbf{Q}^{\mathsf T}$。类似于维纳滤波里面的推导操作，我们线性变换切换到特征向量坐标系 $\hat{\mathbf{v}}=\mathbf{Q}^{\mathsf T}\mathbf{v}$ 来消解多元复合求解，$\mathbf{Q}$ 正交，长度不变。左乘 $\mathbf{Q}^{\mathsf T}$：
+
+$$
+\hat{\mathbf{v}}(n+1)=(\mathbf{I}-\mu\boldsymbol{\Lambda})\hat{\mathbf{v}}(n)
+$$
+
+$\boldsymbol{\Lambda}$ 是对角阵，第 $i$ 个方向单独递推：
+
+$$
+\hat{v}_i(n+1)=(1-\mu\lambda_i)\,\hat{v}_i(n)
+$$
+
+因此，想要误差收敛，乘数的绝对值必须小于 1：
+
+$$
+|1-\mu\lambda_i|<1
+$$
+
+$\lambda_i>0$ 时，这就是 $0<\mu\lambda_i<2$。所有特征值都要满足，因此 $0<\mu<2/\lambda_{\max}$。此时 $\lambda_{\min}$ 那一项每次迭代只乘 $1-\mu\lambda_{\min}$，收敛最慢。所以可以得出一个结论，最大特征值和最小特征值越接近，各方向用同一个步长时收敛越齐。这个特性给量产里一部分优化手段提供了理论基础。
+
+举一个二元的例子。自相关矩阵取
+
+$$
+\mathbf{R}=\begin{bmatrix}4&2\\2&4\end{bmatrix}
+$$
+
+求解特征值：
+
+$$
+\begin{aligned}
+\mathbf{R}\begin{bmatrix}1\\1\end{bmatrix}
+&=\begin{bmatrix}6\\6\end{bmatrix}
+=6\begin{bmatrix}1\\1\end{bmatrix}\\
+\mathbf{R}\begin{bmatrix}1\\-1\end{bmatrix}
+&=\begin{bmatrix}2\\-2\end{bmatrix}
+=2\begin{bmatrix}1\\-1\end{bmatrix}
+\end{aligned}
+$$
+
+所以 $\lambda_{\max}=6$，$\lambda_{\min}=2$，步长必须 $0<\mu<2/6=1/3$。
+
+先取合法步长 $\mu=1/6$。误差若在 $\lambda=6$ 的方向上，$\mathbf{v}=[1,\,1]^{\mathsf T}$：
+
+$$
+\mathbf{v}(1)
+=\begin{bmatrix}1\\1\end{bmatrix}-\frac{1}{6}\begin{bmatrix}6\\6\end{bmatrix}
+=\begin{bmatrix}0\\0\end{bmatrix}
+$$
+
+乘数是 $1-\mu\lambda_{\max}=1-1=0$，这一次迭代就收到 0。误差若在 $\lambda=2$ 的方向上，$\mathbf{v}=[1,\,-1]^{\mathsf T}$：
+
+$$
+\mathbf{v}(1)
+=\begin{bmatrix}1\\-1\end{bmatrix}-\frac{1}{6}\begin{bmatrix}2\\-2\end{bmatrix}
+=\begin{bmatrix}2/3\\-2/3\end{bmatrix}
+$$
+
+乘数是 $1-(1/6)\cdot 2=2/3$，只削掉三分之一。
+
+再取超出上限的步长 $\mu=1>1/3$ ：
+
+$$
+\mathbf{v}(1)
+=\begin{bmatrix}1\\1\end{bmatrix}-1\cdot\begin{bmatrix}6\\6\end{bmatrix}
+=\begin{bmatrix}-5\\-5\end{bmatrix}
+$$
+
+乘数是 $1-6=-5$，绝对值大于 1，误差被放大，无法收敛。
+
+### 4.2 瞬时梯度是真实梯度的无偏估计
+
+真实梯度是
+
+$$
+\frac{\partial J}{\partial\mathbf{w}}=-2\mathbf{p}+2\mathbf{R}\mathbf{w}=-2(\mathbf{p}-\mathbf{R}\mathbf{w})
+$$
+
+LMS 用当前点代替期望，$\hat{\mathbf{p}}(n)=d(n)\mathbf{x}(n)$，$\hat{\mathbf{R}}(n)=\mathbf{x}(n)\mathbf{x}^{\mathsf T}(n)$。得到
+
+$$
+e(n)\mathbf{x}(n)
+=\bigl(d(n)-\mathbf{w}^{\mathsf T}\mathbf{x}(n)\bigr)\mathbf{x}(n)
+=d(n)\mathbf{x}(n)-\mathbf{x}(n)\mathbf{x}^{\mathsf T}(n)\mathbf{w}
+$$
+
+对应的瞬时梯度是 $-2e(n)\mathbf{x}(n)$。假设最优滤波器系数是确定的固定值从期望中提取出来：
+
+$$
+\begin{aligned}
+E[e(n)\mathbf{x}(n)]
+&=E[d(n)\mathbf{x}(n)]-E[\mathbf{x}(n)\mathbf{x}^{\mathsf T}(n)]\mathbf{w}\\
+&=\mathbf{p}-\mathbf{R}\mathbf{w}
+\end{aligned}
+$$
+
+于是
+
+$$
+E[-2e(n)\mathbf{x}(n)]=-2(\mathbf{p}-\mathbf{R}\mathbf{w})=\frac{\partial J}{\partial\mathbf{w}}
+$$
+
+因此，瞬时梯度的期望等于真实梯度，是他的无偏估计。
+
+推导中假设最优系数固定不变，与参考和误差等信号完全独立，但滤波器跑起来以后，系数由过去的样本算出，延迟线里还留着那些样本，当前抽头和系数并不独立，所以还是会引入额外的误差。
+
+### 4.3 扬声器到降噪点的传递路径
+
+目前的推导是基于维纳滤波得出的，直接将滤波后的信号视作降噪信号，但仅在传函测算或者是AEC场景可以这么算，因为这两者不需要播音。实际ANC会需要扬声器播放声音执行降噪工作，所以扬声器到降噪点的这段传递路径必须放进模型里进行建模。
