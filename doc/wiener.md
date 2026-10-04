@@ -1,6 +1,6 @@
 # 维纳滤波
 
-主动降噪在降噪耳机上已经是成熟技术，近来更是在车载上重新受到重视。前馈降噪学习的是参考点到降噪目标点的线性映射，也就是一条 FIR 路径：用参考信号预测目标点的噪声，扬声器播放反相声波，把目标点的声压抵消掉。这条 FIR 在均方误差意义下的最优系数，就是维纳解。
+主动降噪在降噪耳机上已经是成熟技术，近来更是在车载上重新受到重视。主流的前馈降噪学习的是参考点到降噪目标点的线性传递路径，也就是一条 FIR 滤波器。用参考信号经过FIR滤波器映射得到目标点的噪声，扬声器播放反相声波，把目标点的噪声声压抵消掉。这条 FIR 在均方误差意义下的最优系数，就是维纳解。
 
 ps:公式推导只是按照自己的理解进行简化版的推导，也许并不严谨。
 
@@ -95,7 +95,7 @@ J_{\min}
 \end{aligned}
 $$
 
-到这里为止，式子里用的都是统计量，我们需要把他转换到信号序列值的计算上面来。$E[x(n)]$ 是时刻 $n$ 在全体可能实现上的集合平均，其计算需要把同一时刻的许多条独立样本记录拿来求均值。我们不是奇异博士，没办法观测无穷多条平行时间线，我们在这个时间点上只能做一次样本观测，凑不齐这个平均。
+到这里为止，式子里用的都是统计量，我们需要把他转换到信号序列值的计算上面来。$E[x(n)]$ 是时刻 $n$ 在全体可能实现上的集合平均，其计算需要把同一时刻的许多条独立观测样本拿来求均值。我们不是奇异博士，没办法观测无穷多条平行时间线，我们在这个时间点上只能做一次样本观测，凑不齐这个平均。
 
 但是信号若是宽平稳的各态历经信号，这个期望就不随 $n$ 改变。就可以基于均值遍历定理把集合平均换成这一条记录上的时间平均：
 
@@ -248,6 +248,8 @@ $$
 
 ## 3. 仿真
 
+码仓：https://github.com/liang-nian/anc.git
+
 
 ### 3.1 函数对应的公式
 
@@ -323,14 +325,192 @@ $$
 
 **「阶次被消掉之后，剩下的谱就是纯净目标信号」**：紫线在 40、80、120、160 Hz 有四个峰，最高约 37 dB，峰之间的宽带底大约 13 dB，里面有参考白噪声经主路径之后的分量。红线和青绿虚线贴在约 11 dB 的一条平线上，四个峰消失。这条约 11 dB 的平线就是 $u$ 的谱。
 
-## 4. 总结
+## 4. 补充
 
-实际仿真中几乎下意识的会默认采用部分谐波来合成仿真信号，当采样率极高时，信号值趋同，甚至谐波的值趋于0，会直接导致矩阵逆病态，所以反而会类似于波束成形仿真一样，主动添加一些白噪声。
+### 4.1 谐波信号仿真踩坑
 
-维纳滤波的原理本身比较清楚，不过还有不少特性值得继续分析。查资料时经常会提到特征值和条件数，说它们会影响计算结果。这点比较抽象，因为资料里给出的已经是矩阵视角下的总结。回到 Wiener–Hopf 方程，把它当成一组线性方程来解，特征值和条件数为什么会造成这种影响就很清楚了。类似的特性还有很多，它们会深刻地影响到后面由维纳滤波派生出来的 ANC 算法。
+实际仿真中几乎下意识的会默认采用部分谐波来合成仿真信号，当采样率极高时，信号值趋同，甚至谐波的值趋于0，会直接导致矩阵逆病态，所以上面的仿真会像波束成形仿真一样，主动添加一些白噪声。
 
-统计量准确时，维纳滤波可以直接求得最优解。但实际的 ANC 系统几乎不会选它当核心算法。耳机和车载都把时延卡得很死，核心算法不能有太大的算力消耗。而维纳滤波计算自相关元素就已经涉及到大量内积，更何况后面还有矩阵运算。
+### 4.2 特征值与条件数影响
 
-既然时延无法满足要求，那么能不能像这一章的仿真一样采集所需的数据，然后拿全部数据做一次离线计算，而非在线的流式更新呢？目标系统若是理想的线性时不变系统，确实可以这样做，但实际应用中并非如此。最直接的例子是扬声器：扬声器的特性会随着激励和频率的变化而变化，主动降噪给到扬声器的激励大小变化是十分极端的，并且主动降噪激励的频率也并不总是在扬声器工作频率范围内，这都导致了其特性不可能是时不变的。当然扬声器特性通常不放进自适应滤波器里进行建模，可是车上的噪声传递路径里还有吸振器，悬架等等器件都具备类似的特性。所以 ANC 的核心算法必须能在线自适应更新。
+维纳滤波非常重要的一个特性就是特征值和条件数对结果的稳定性影响。这点在资料里面也经常提到，但比较抽象，因为资料里给出的已经是矩阵视角下的总结。回到 Wiener–Hopf 方程，把它当成一组线性方程来解，特征值和条件数为什么会造成这种影响就很清楚了。
 
-因此，对于ANC功能而言，我们仍然需要探索一个更具备可实施性的核心算法。
+方程是
+
+$$
+\mathbf{R}\mathbf{w}=\mathbf{p}
+$$
+
+$\mathbf{R}$ 对称正定。每个特征值 $\lambda_i>0$ 对应一个特征向量 $\mathbf{q}_i$，满足
+
+$$
+\mathbf{R}\mathbf{q}_i=\lambda_i\mathbf{q}_i
+$$
+
+已知$\mathbf{R}$ 对称正定，将特征向量缩放为单位向量后，根据特征向量的性质可知：沿着 $\mathbf{q}_i$，$\mathbf{R}$ 只把向量乘上 $\lambda_i$，不转向； $i=j$ 时 $\mathbf{q}_i^{\mathsf T}\mathbf{q}_j=1$，否则为 0。按列排成
+
+$$
+\mathbf{Q}=\begin{bmatrix}\mathbf{q}_1&\mathbf{q}_2&\cdots\end{bmatrix}
+$$
+
+就有 $\mathbf{Q}^{\mathsf T}\mathbf{Q}=\mathbf{I}$，所以 $\mathbf{Q}^{-1}=\mathbf{Q}^{\mathsf T}$。$\mathbf{R}\mathbf{q}_i=\lambda_i\mathbf{q}_i$ 合成矩阵是 $\mathbf{R}\mathbf{Q}=\mathbf{Q}\boldsymbol{\Lambda}$，$\boldsymbol{\Lambda}$ 的对角元素是 $\lambda_i$。右乘 $\mathbf{Q}^{\mathsf T}$：
+
+$$
+\mathbf{R}=\mathbf{R}\mathbf{Q}\mathbf{Q}^{\mathsf T}=\mathbf{Q}\boldsymbol{\Lambda}\mathbf{Q}^{\mathsf T}
+$$
+
+代回原方程：
+
+$$
+\mathbf{Q}\boldsymbol{\Lambda}\mathbf{Q}^{\mathsf T}\mathbf{w}=\mathbf{p}
+$$
+
+左乘 $\mathbf{Q}^{\mathsf T}$，并用 $\mathbf{Q}^{\mathsf T}\mathbf{Q}=\mathbf{I}$：
+
+$$
+\boldsymbol{\Lambda}\mathbf{Q}^{\mathsf T}\mathbf{w}=\mathbf{Q}^{\mathsf T}\mathbf{p}
+$$
+
+记
+
+$$
+\hat{\mathbf{w}}=\mathbf{Q}^{\mathsf T}\mathbf{w},\qquad
+\hat{\mathbf{p}}=\mathbf{Q}^{\mathsf T}\mathbf{p}
+$$
+
+$\hat{w}_i=\mathbf{q}_i^{\mathsf T}\mathbf{w}$，根据线代基础，这里实际上是将 $\mathbf{w}$ 线性投影到特征向量构成的坐标系。线性投影可以保留绝大多数基础特性，接下来就在这个投影空间内做分析。$\boldsymbol{\Lambda}$ 是对角阵，第 $i$ 行只剩一项：
+
+$$
+\lambda_i\hat{w}_i=\hat{p}_i\qquad\text{即}\qquad\hat{w}_i=\frac{\hat{p}_i}{\lambda_i}
+$$
+
+从这里可以得出一个基础结论，假设 $\hat{p}_i$ 为输入，系统特性也就是特征值为已知常量，那么特征值越小，系统输入误差引起的系数解误差就越大，由于两个空间之间是线性变换，满足等比关系，所以这个结论在原空间也是适用的。
+
+条件数是这最大特征值与最小特征值之比
+
+$$
+\kappa(\mathbf{R})=\frac{\lambda_{\max}}{\lambda_{\min}}
+$$
+
+只扰动右端时，原方程和扰动后的方程是
+
+$$
+\mathbf{R}\mathbf{w}=\mathbf{p},\qquad
+\mathbf{R}(\mathbf{w}+\delta\mathbf{w})=\mathbf{p}+\delta\mathbf{p}
+$$
+
+两式相减得到 $\mathbf{R}\,\delta\mathbf{w}=\delta\mathbf{p}$，所以
+
+$$
+\delta\mathbf{w}=\mathbf{R}^{-1}\delta\mathbf{p}
+$$
+
+假设存在向量 $\mathbf{v}$ ，投影到特征向量坐标 $\hat{\mathbf{v}}=\mathbf{Q}^{\mathsf T}\mathbf{v}$。$\mathbf{Q}$ 正交，长度不变，$\|\hat{\mathbf{v}}\|=\|\mathbf{v}\|$，并且 $\|\mathbf{R}\mathbf{v}\|=\|\boldsymbol{\Lambda}\hat{\mathbf{v}}\|$。对角阵逐项相乘：
+
+$$
+\|\boldsymbol{\Lambda}\hat{\mathbf{v}}\|^2
+=\sum_i(\lambda_i\hat{v}_i)^2
+\le\lambda_{\max}^2\sum_i\hat{v}_i^2
+=\lambda_{\max}^2\|\mathbf{v}\|^2
+$$
+
+所以 $\|\mathbf{R}\mathbf{v}\|\le\lambda_{\max}\|\mathbf{v}\|$。$\mathbf{R}^{-1}$ 的特征值是 $1/\lambda_i$，最大的一个是 $1/\lambda_{\min}$，同理得到
+
+$$
+\|\mathbf{R}^{-1}\mathbf{v}\|\le\frac{1}{\lambda_{\min}}\|\mathbf{v}\|
+$$
+
+用到 $\delta\mathbf{w}$ 和 $\mathbf{p}$ 上：
+
+$$
+\|\delta\mathbf{w}\|
+=\|\mathbf{R}^{-1}\delta\mathbf{p}\|
+\le\frac{\|\delta\mathbf{p}\|}{\lambda_{\min}}
+$$
+
+$$
+\|\mathbf{p}\|
+=\|\mathbf{R}\mathbf{w}\|
+\le\lambda_{\max}\|\mathbf{w}\|
+$$
+
+第二条两边都是正数，直接取导数得到：
+
+$$
+\frac{1}{\lambda_{\max}\|\mathbf{w}\|}\le\frac{1}{\|\mathbf{p}\|}
+$$
+
+再两边同乘正数 $\lambda_{\max}$：
+
+$$
+\frac{1}{\|\mathbf{w}\|}\le\frac{\lambda_{\max}}{\|\mathbf{p}\|}
+$$
+
+由此得到原始空间内的相对误差：
+
+$$
+\begin{aligned}
+\frac{\|\delta\mathbf{w}\|}{\|\mathbf{w}\|}
+&\le\frac{\|\delta\mathbf{p}\|}{\lambda_{\min}\|\mathbf{w}\|}\\
+&\le\frac{\|\delta\mathbf{p}\|}{\lambda_{\min}}\cdot\frac{\lambda_{\max}}{\|\mathbf{p}\|}\\
+&=\kappa(\mathbf{R})\frac{\|\delta\mathbf{p}\|}{\|\mathbf{p}\|}
+\end{aligned}
+$$
+
+可见，误差的相对大小强相关与条件数。
+
+以一个极端的二元方程组为例。条件数极大，两条方程的系数只差 $\frac{1}{1000}$：
+
+$$
+\begin{aligned}
+\left(10000+\frac{1}{2000}\right)w_0+\left(10000-\frac{1}{2000}\right)w_1&=20000\\
+\left(10000-\frac{1}{2000}\right)w_0+\left(10000+\frac{1}{2000}\right)w_1&=20000
+\end{aligned}
+$$
+
+写成矩阵就是
+
+$$
+\mathbf{R}=\begin{bmatrix}10000+\frac{1}{2000}&10000-\frac{1}{2000}\\10000-\frac{1}{2000}&10000+\frac{1}{2000}\end{bmatrix},\qquad
+\mathbf{p}=\begin{bmatrix}20000\\20000\end{bmatrix},\qquad
+\mathbf{w}=\begin{bmatrix}1\\1\end{bmatrix}
+$$
+
+求解特征值得到
+
+$$
+\begin{aligned}
+\mathbf{R}\begin{bmatrix}1\\1\end{bmatrix}
+&=20000\begin{bmatrix}1\\1\end{bmatrix}\\
+\mathbf{R}\begin{bmatrix}1\\-1\end{bmatrix}
+&=\frac{1}{1000}\begin{bmatrix}1\\-1\end{bmatrix}
+\end{aligned}
+$$
+
+$\lambda_{\max}=20000$，$\lambda_{\min}=1/1000$，$\kappa(\mathbf{R})=20000/(1/1000)=2\times 10^{7}$。
+
+现假设右端输入引入误差 $\delta\mathbf{p}=[1,\,-1]^{\mathsf T}$，右端变为 $20001$ 和 $19999$。2-范数下 $\|\mathbf{p}\|=20000\sqrt{2}$，$\|\delta\mathbf{p}\|=\sqrt{2}$，相对偏差是 $1/20000$，也就是 $0.005\%$。新方程组是
+
+$$
+\begin{aligned}
+\left(10000+\frac{1}{2000}\right)w_0+\left(10000-\frac{1}{2000}\right)w_1&=20001\\
+\left(10000-\frac{1}{2000}\right)w_0+\left(10000+\frac{1}{2000}\right)w_1&=19999
+\end{aligned}
+$$
+
+两式相加、相减：
+
+$$
+\begin{aligned}
+20000w_0+20000w_1&=20001+19999\\
+w_0+w_1&=2\\
+\frac{1}{1000}w_0-\frac{1}{1000}w_1&=20001-19999\\
+w_0-w_1&=2000
+\end{aligned}
+$$
+
+解得 $w_0=1001$，$w_1=-999$，也就是 $\delta\mathbf{w}=[1000,\,-1000]^{\mathsf T}$。$\|\delta\mathbf{w}\|/\|\mathbf{w}\|=1000$，正好等于 $2\times 10^{7}\times(1/20000)$。右端 $0.005\%$ 的相对偏差，乘上条件数以后，解从 $[1,\,1]^{\mathsf T}$ 变成 $[1001,\,-999]^{\mathsf T}$。
+
+### 4.3 维纳滤波ANC量产局限性
+
+统计量准确时，维纳滤波可以直接求得最优解。但实际的 ANC 系统几乎不会选它当核心算法。耳机和车载都把时延卡得很死，核心算法不能有太大的算力消耗。而维纳滤波计算自相关元素就已经涉及到大量内积，更何况后面还有矩阵运算。也不能提前离线计算噪声传递路径，因为路径并非线性时不变，以车载主动降噪为例，其噪声传递路径里有吸振器，悬架等等器件，响应特性会随着工况变化。所以 ANC 的核心算法必须能在线自适应更新。

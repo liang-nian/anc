@@ -17,3 +17,9 @@ python3 sim/wiener_sim.py
 ```bash
 python3 sim/lms_sim.py
 ```
+
+多通道 FxLMS，每次送入一个采样点。`FxlmsCore` 先对参考做预滤波，再用当前误差和滤波后参考更新，最后算扬声器输出。笔记见 `doc/fxlms.md`。图写到 `output/sim/03_fxlms.png`，库在 `output/fxlms/`。
+
+```bash
+python3 sim/fxlms_sim.py
+```
