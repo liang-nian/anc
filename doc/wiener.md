@@ -434,7 +434,7 @@ $$
 \le\lambda_{\max}\|\mathbf{w}\|
 $$
 
-第二条两边都是正数，直接取导数得到：
+第二条两边都是正数，直接取倒数得到：
 
 $$
 \frac{1}{\lambda_{\max}\|\mathbf{w}\|}\le\frac{1}{\|\mathbf{p}\|}

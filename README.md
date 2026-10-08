@@ -23,3 +23,9 @@ python3 sim/lms_sim.py
 ```bash
 python3 sim/fxlms_sim.py
 ```
+
+多通道窄带 FxLMS。阶次在构造时给定，基频每个采样点送入，库内合成各阶次的余弦和正弦，再用当前误差更新。笔记见 `doc/nbfxlms.md`。图写到 `output/sim/05_nbfxlms.png`，库在 `output/nbfxlms/`。
+
+```bash
+python3 sim/nbfxlms_sim.py
+```
