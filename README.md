@@ -29,3 +29,9 @@ python3 sim/fxlms_sim.py
 ```bash
 python3 sim/nbfxlms_sim.py
 ```
+
+多通道频域 FxLMS。每次送入一块参考和一块误差，在频域做次级路径滤波、相关更新和扬声器输出。笔记见 `doc/fdfxlms.md`。图写到 `output/sim/06_fdfxlms.png`，库在 `output/fdfxlms/`。
+
+```bash
+python3 sim/fdfxlms_sim.py
+```
