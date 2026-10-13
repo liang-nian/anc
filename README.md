@@ -35,3 +35,9 @@ python3 sim/nbfxlms_sim.py
 ```bash
 python3 sim/fdfxlms_sim.py
 ```
+
+多通道分块频域 FxLMS。次级路径和控制滤波器都按块切开，每一块仍做重叠保留，过去的频谱留在延迟线上。笔记见 `doc/pffxlms.md`。图写到 `output/sim/07_pffxlms.png`，库在 `output/pffxlms/`。
+
+```bash
+python3 sim/pffxlms_sim.py
+```
