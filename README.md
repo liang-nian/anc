@@ -41,3 +41,9 @@ python3 sim/fdfxlms_sim.py
 ```bash
 python3 sim/pffxlms_sim.py
 ```
+
+单通道卡尔曼滤波主动降噪。把最优 FIR 系数和次级路径状态放进同一个协方差卡尔曼，每次送入一个采样点。笔记见 `doc/kfanc.md`。图写到 `output/sim/08_kfanc.png`，库在 `output/kfanc/`。
+
+```bash
+python3 sim/kfanc_sim.py
+```
