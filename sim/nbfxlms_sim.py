@@ -138,7 +138,7 @@ def shift_push(line: np.ndarray, value: float) -> None:
 
 
 def mic_error(y_delay: np.ndarray, d: np.ndarray) -> np.ndarray:
-    """误差由已经播出的扬声器历史和目标信号相减得到。次级路径第 0 拍为 0。"""
+    """误差由已经播出的扬声器历史和目标信号相减得到。次级路径第 0 点为 0。"""
     e = np.zeros(N_ERR, dtype=np.float64)
     for q in range(N_ERR):
         acc = 0.0
@@ -160,7 +160,7 @@ def write_speaker(y: np.ndarray, y_delay: np.ndarray) -> None:
 
 
 def reference_bank(n: int, order: np.ndarray, omega0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """与 C 同一套旋转。阶次固定，每一拍用这一拍的基频角频率。"""
+    """与 C 同一套旋转。阶次固定，每一点用这一点的基频角频率。"""
     xc = np.ones(order.size, dtype=np.float64)
     xs = np.zeros(order.size, dtype=np.float64)
     xc_hist = np.zeros((order.size, n), dtype=np.float64)

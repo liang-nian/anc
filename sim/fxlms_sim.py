@@ -158,7 +158,7 @@ def shift_push(line: np.ndarray, value: float) -> None:
 
 
 def mic_error(y_delay: np.ndarray, d: np.ndarray) -> np.ndarray:
-    """误差由已经播出的扬声器历史和目标信号相减得到。次级路径第 0 拍为 0。"""
+    """误差由已经播出的扬声器历史和目标信号相减得到。次级路径第 0 点为 0。"""
     e = np.zeros(N_ERR, dtype=np.float64)
     for q in range(N_ERR):
         acc = 0.0
@@ -170,7 +170,7 @@ def mic_error(y_delay: np.ndarray, d: np.ndarray) -> np.ndarray:
 
 
 def open_speaker_slot(y_delay: np.ndarray) -> None:
-    """当前扬声器样本还没算出。第 0 拍系数为 0，先占一个空位对齐延迟。"""
+    """当前扬声器样本还没算出。第 0 点系数为 0，先占一个空位对齐延迟。"""
     for l in range(N_SPK):
         shift_push(y_delay[l], 0.0)
 
