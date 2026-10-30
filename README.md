@@ -47,3 +47,33 @@ python3 sim/pffxlms_sim.py
 ```bash
 python3 sim/kfanc_sim.py
 ```
+
+多通道 RLS，没有次级路径。每个误差通道各有一套协方差，每次送入一个采样点。笔记见 `doc/rls.md`。图写到 `output/sim/09_rls.png`，库在 `output/rls/`。
+
+```bash
+python3 sim/rls_sim.py
+```
+
+多通道滤波 RLS。参考经次级路径之后做协方差递推，扬声器仍乘原始参考。笔记见 `doc/frls.md`。图写到 `output/sim/10_frls.png`，库在 `output/frls/`。
+
+```bash
+python3 sim/frls_sim.py
+```
+
+多通道快速阵列 RLS。外环和滤波 RLS 相同，协方差换成每路参考秩 2 的生成元。笔记见 `doc/farls.md`。图写到 `output/sim/11_farls.png`，库在 `output/farls/`。
+
+```bash
+python3 sim/farls_sim.py
+```
+
+多通道快速阵列卡尔曼。每只扬声器的状态是控制系数和次级延迟线，协方差用同一套低秩旋转往前推。笔记见 `doc/fakf.md`。图写到 `output/sim/12_fakf.png`，库在 `output/fakf/`。
+
+```bash
+python3 sim/fakf_sim.py
+```
+
+同一条路径上的对比。次级路径前 8 点为 0，末两点是舱室响应，这是频域一块的最长延时。控制长度 8，块长 8，种子 7，16000 点。在线算法用 `doc/fakf.md` 第 4.2 节的参数。维纳滤波整段一次求解，只进性能，不进第 4.3 节的耗时。耗时只包 `Core`，去掉开头 64 点；频域一次处理 8 点，耗时除以 8。下降曲线写到 `output/sim/13_cmp_perf.png`，耗时写到 `output/sim/13_cmp_time.png`。笔记里的记录图在 `doc/fig/`。
+
+```bash
+python3 sim/cmp_sim.py
+```
