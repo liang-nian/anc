@@ -297,7 +297,7 @@ $y_l^{\star}$ 是用 $\mathbf{b}_l$ 合成的理想扬声器信号。系数从 0
 
 ### 3.3 仿真结果
 
-![05 多通道窄带 FxLMS](../output/sim/05_nbfxlms.png)
+![05 多通道窄带 FxLMS](image/05_nbfxlms.png)
 
 波形取记录末尾 $150\,\mathrm{ms}$，功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率，功率谱取末尾 $4\,\mathrm{s}$，误差 NMSE 用末尾 $2\,\mathrm{s}$，系数取整段跑完之后的值，和 $\mathbf{b}$ 比较。
 

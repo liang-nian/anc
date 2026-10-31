@@ -72,7 +72,7 @@ python3 sim/farls_sim.py
 python3 sim/fakf_sim.py
 ```
 
-同一条路径上的对比。次级路径前 8 点为 0，末两点是舱室响应，这是频域一块的最长延时。控制长度 8，块长 8，种子 7，16000 点。在线算法用 `doc/fakf.md` 第 4.2 节的参数。维纳滤波整段一次求解，只进性能，不进第 4.3 节的耗时。耗时只包 `Core`，去掉开头 64 点；频域一次处理 8 点，耗时除以 8。下降曲线写到 `output/sim/13_cmp_perf.png`，耗时写到 `output/sim/13_cmp_time.png`。笔记里的记录图在 `doc/fig/`。
+同一条路径上的对比。次级路径前 8 点为 0，末两点是舱室响应，这是频域一块的最长延时。控制长度 8，块长 8，种子 7，16000 点。在线算法用 `doc/fakf.md` 第 4.2 节的参数。维纳滤波整段一次求解，只进性能，不进第 4.3 节的耗时。耗时只包 `Core`，去掉开头 64 点；频域一次处理 8 点，耗时除以 8。下降曲线写到 `output/sim/13_cmp_perf.png`，耗时写到 `output/sim/13_cmp_time.png`。笔记里的记录图在 `doc/image/`。
 
 ```bash
 python3 sim/cmp_sim.py

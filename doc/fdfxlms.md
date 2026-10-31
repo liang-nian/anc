@@ -355,7 +355,7 @@ $$
 
 ### 3.3 仿真结果
 
-![06 多通道频域 FxLMS](../output/sim/06_fdfxlms.png)
+![06 多通道频域 FxLMS](image/06_fdfxlms.png)
 
 波形取记录末尾 $150\,\mathrm{ms}$，功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率，功率谱取末尾 $4\,\mathrm{s}$，误差 NMSE 用末尾 $2\,\mathrm{s}$，系数取整段跑完之后的值，和 $\mathbf{b}_{lp}$ 比较。
 
