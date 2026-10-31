@@ -198,7 +198,7 @@ $$
 
 ### 3.3 仿真结果
 
-![02 多通道 LMS](../output/sim/02_lms.png)
+![02 多通道 LMS](image/02_lms.png)
 
 波形取记录末尾 $150\,\mathrm{ms}$。功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率，功率谱取末尾 $4\,\mathrm{s}$，NMSE 用末尾 $2\,\mathrm{s}$。
 

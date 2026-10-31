@@ -41,11 +41,11 @@ y(n)&=\sum_{c=0}^{B_w-1}y_c(n-cM)
 \end{aligned}
 $$
 
-![整段内积分段后与分段并行滤波等效](../output/sim/pffxlms_td_eq.png)
+![整段内积分段后与分段并行滤波等效](image/pffxlms_td_eq.png)
 
 分段后，每个滤波器块都需要 $M$ 点输入才可以转到频域进行 OLS 计算，但是在内积分段过程中显然可见，时延分段的输入数据块其实就是过去的输入块，所以实际上这里只需要 $M$ 点输入即可实现所有滤波器块的更新。由此我们得到了分块频域 FxLMS算法的时域模型
 
-![单通道前馈时域分块 FxLMS](../output/sim/pffxlms_td_flow.png)
+![单通道前馈时域分块 FxLMS](image/pffxlms_td_flow.png)
 
 接下来就简单了，按照频域 FxLMS 算法的推导，把每一个卷积和相关计算转换到频域的 OLS 计算即可，与频域相比，分块频域算法会增加一个维度，也就是滤波器块数。具体推导过程此处不做赘述，可以去查阅频域 FxLMS 章节。
 
@@ -269,7 +269,7 @@ $$
 
 ### 3.3 仿真结果
 
-![07 多通道分块频域 FxLMS](../output/sim/07_pffxlms.png)
+![07 多通道分块频域 FxLMS](image/07_pffxlms.png)
 
 波形取记录末尾 $150\,\mathrm{ms}$。功率曲线是整段 $16\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率。功率谱取末尾 $4\,\mathrm{s}$。误差 NMSE 用末尾 $2\,\mathrm{s}$。系数取整段跑完之后的值，和 $\mathbf{b}_{lp}$ 比较。
 

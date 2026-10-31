@@ -8,7 +8,7 @@ ps:公式推导只是按照自己的理解进行简化版的推导，也许并�
 
 **符号**
 
-![符号](fig/kfanc_sym.png)
+![符号](image/kfanc_sym.png)
 
 卡尔曼滤波的视角和维纳滤波不同，他是从系统的角度出发的。一个系统，有着一个输入，一个状态和一个输出，系统的状态因为输入而改变，系统输出则来自于对状态的观测和输入的直达。从这个建模角度出发，卡尔曼滤波存在许多不同的范式，可以应用在非常广泛的领域，这里只对下面 ANC 使用的一种范式作讲解。
 
@@ -37,17 +37,9 @@ $$
 \mathrm{E}[\mathbf{w}(n)\,v(n)]=\mathbf{0}
 $$
 
-$v(n)$ 和状态也不相关。当状态估计 $\hat{\mathbf{x}}$ 收敛到真实状态 $\mathbf{x}$ 时，这个模型得到的观测是 $\mathbf{c}^{\mathsf T}\hat{\mathbf{x}}+\mathbf{d}^{\mathsf T}\mathbf{u}$。实际观测减去它
+$v(n)$ 和状态也不相关，方差是 $R$，由于测量噪声和状态不相关，状态收敛无法消除这个噪声。
 
-$$
-z-\mathbf{c}^{\mathsf T}\hat{\mathbf{x}}-\mathbf{d}^{\mathsf T}\mathbf{u}
-=\mathbf{c}^{\mathsf T}(\mathbf{x}-\hat{\mathbf{x}})+v
-=v
-$$
-
-只剩测量噪声，方差是 $R$，由于测量噪声和状态不相关，状态收敛无法消除这个噪声，而这就是卡尔曼滤波模型的收敛目标。
-
-得到数学建模之后，我们需要考虑如何使状态误差逐步收敛减小。状态预测误差和协方差是
+我们关注的是状态的求解，状态预测误差和协方差是
 
 $$
 \begin{aligned}
@@ -58,7 +50,7 @@ $$
 
 $\mathbf{P}(n)$ 是 $N\times N$，对称，半正定。初值是 $\hat{\mathbf{x}}(0)$ 和 $\mathbf{P}(0)$。
 
-但实际上我们不知道真实的目标状态值是什么，所以无法通过这条公式直接计算得到误差量，实际上如果可以得到目标值，整个模型都失去意义了，这个时候卡尔曼滤波会通过观测值来统计误差信息。观测到 $z(n)$ 之后，要估的是状态预测误差 $\tilde{\mathbf{x}}=\mathbf{x}-\hat{\mathbf{x}}$。把观测拆开
+目标状态值不可直接获得，因此只能通过观测值来估计状态误差。观测到 $z(n)$ 之后，把观测拆开
 
 $$
 \begin{aligned}
@@ -73,13 +65,13 @@ $$
 \varepsilon=z-\mathbf{c}^{\mathsf T}\hat{\mathbf{x}}-\mathbf{d}^{\mathsf T}\mathbf{u}=\mathbf{c}^{\mathsf T}\tilde{\mathbf{x}}+v
 $$
 
-直得到误差之后，我们的目标是减小他，在 LMS 算法里面我们采用梯度下降法使得误差逐步减小，而卡尔曼滤波里面我们的思路更加简单粗暴一些，我们直接尝试将误差补偿回去。$\varepsilon$ 是标量，对状态预测误差做线性估计，就是用一个 $N\times 1$ 的增益去乘它，$\widehat{\tilde{\mathbf{x}}}=\mathbf{K}\varepsilon$。加回预测，得到修正后的状态
+至此我们得到了预测误差与状态误差之间的关联公式。$\varepsilon$ 是标量，对状态预测误差做线性估计，就是用一个 $N\times 1$ 的增益去乘它，$\widehat{\tilde{\mathbf{x}}}=\mathbf{K}\varepsilon$。加回预测，得到修正后的状态
 
 $$
 \hat{\mathbf{x}}(n|n)=\hat{\mathbf{x}}(n)+\mathbf{K}(n)\,\varepsilon(n)
 $$
 
-$\mathbf{K}$ 取使均方误差最小的值，现在的问题是如何求解它，在部分资料里面这部分推导十分拗口，因为他使用了步进法来模拟梯度下降过程进行最优解分析，但是可以直接用矩阵求导梯度 0 最优解求解。修正后的误差记成 $\mathbf{e}=\tilde{\mathbf{x}}-\mathbf{K}\varepsilon$，均方误差是
+得到状态关于观测值的迭代公式后，只需要求解使均方误差最小的 $\mathbf{K}$ 值。先列出损失函数，我们的目标是减小状态估计的误差，修正后的误差记成 $\mathbf{e}=\tilde{\mathbf{x}}-\mathbf{K}\varepsilon$，均方误差损失函数是
 
 $$
 \begin{aligned}
@@ -92,7 +84,7 @@ J
 \end{aligned}
 $$
 
-对 $\mathbf{K}$ 求梯度，令梯度等于 0
+基于矩阵求导对 $\mathbf{K}$ 求梯度，令梯度等于 0
 
 $$
 \frac{\partial J}{\partial\mathbf{K}}
@@ -118,7 +110,7 @@ R_e&=\mathbf{c}^{\mathsf T}\mathbf{P}\mathbf{c}+R\\
 \end{aligned}
 $$
 
-对当前状态更新后的结果进行误差分析，求得后验误差把状态预测误差和测量噪声都带上
+得到这一步的状态估计后，继续迭代进行更新，状态自然可以通过转移矩阵迭代，但是误差也会迭代到下一步，所以必须对误差的传递进行建模。对当前状态更新后的结果进行误差分析，求得后验误差
 
 $$
 \mathbf{x}(n)-\hat{\mathbf{x}}(n|n)
@@ -152,7 +144,7 @@ $$
 =(\mathbf{I}-\mathbf{K}\mathbf{c}^{\mathsf T})\mathbf{P}
 $$
 
-下一步迭代中，预测用这一次迭代得到的后验估计 $\mathbf{A}$ 进行迭代，已知输入照加
+得到了状态估计和误差协方差，可以基于状态转移矩阵进行迭代
 
 $$
 \begin{aligned}
@@ -179,7 +171,7 @@ $$
 \end{aligned}
 $$
 
-至此我们得到了一个循环迭代公式，把时刻写回去，每来一个观测就做这一组
+至此我们得到了一个循环迭代公式，把时刻写回去
 
 $$
 \begin{aligned}
@@ -195,13 +187,6 @@ R_e(n)&=R+\mathbf{c}^{\mathsf T}(n)\mathbf{P}(n)\mathbf{c}(n)\\
 +\mathbf{Q}(n)
 \end{aligned}
 $$
-
-每一次迭代按这个顺序走：
-
-1. 上一次迭代已经给出预测 $\hat{\mathbf{x}}(n)$、$\mathbf{P}(n)$
-2. 这一次迭代看到观测，算出 $\varepsilon(n)$
-3. 用最优 $\mathbf{K}(n)=\mathbf{P}(n)\mathbf{c}(n)/R_e(n)$ 得到 $\hat{\mathbf{x}}(n|n)$
-4. 再推出下一次迭代的 $\hat{\mathbf{x}}(n+1)$、$\mathbf{P}(n+1)$
 
 ## 2. 数学模型
 
@@ -254,7 +239,7 @@ $$
 \mathbf{x}(n)=\begin{bmatrix}\mathbf{w}(n)\\ \boldsymbol{\psi}(n)\end{bmatrix}
 $$
 
-权值的虚构模型是逐点乘 $\lambda^{-1/2}$，$0<\lambda\le 1$。$u_o=\mathbf{r}^{\mathsf T}\mathbf{w}$ 是状态的线性函数，收进状态转移。$u=-y$ 是已知输入，单独写成 $\mathbf{B}_n\hat{\mathbf{w}}$。第一节的已知输入 $\mathbf{u}$ 在这里就是正在发声的权值 $\hat{\mathbf{w}}$，$m=M$。状态转移方程是
+权值的虚构模型是逐点乘 $\lambda^{-1/2}$，$0<\lambda\le 1$。$u_o=\mathbf{r}^{\mathsf T}\mathbf{w}$ 是状态的线性函数，收进状态转移。$u=-y$ 是已知输入，单独写成 $\mathbf{B}_n\hat{\mathbf{w}}$。第一节的已知输入 $\mathbf{u}$ 在这里就是正在发声的扬声器值，$m=M$。状态转移方程是
 
 $$
 \begin{aligned}
@@ -307,7 +292,7 @@ e(n)
 \end{aligned}
 $$
 
-$s_0=0$ 时 $\mathbf{d}_n=\mathbf{0}$，乘积 $\mathbf{c}_n^{\mathsf T}\mathbf{x}(n)$ 本身就是去掉测量噪声之后的观测值，所以误差信号就是这个模型的观测值。
+$s_0=0$ 时 $\mathbf{d}_n=\mathbf{0}$，乘积 $\mathbf{c}_n^{\mathsf T}\mathbf{x}(n)$ 本身就是去掉测量噪声之后的观测值，和上面的误差信号公式一致，所以误差信号就是这个模型的观测值。
 
 $\hat{\mathbf{w}}$ 在最近 $M_s$ 次迭代都等于 $\mathbf{w}$ 时，$u_o+u=0$，合成延迟线也保持为 0。观测值只剩干扰噪声
 
@@ -315,7 +300,7 @@ $$
 e(n)=v(n)
 $$
 
-这就是收敛目标。既然已经知道状态，观测向量，状态转移方程以及观测值，直接套用上述推导的更新公式即可。过程噪声协方差取 $\mathbf{Q}=\mathbf{0}$，$R$ 是测量噪声方差，值得注意的是在 ANC 领域里面我们根本不知道这个方差值是多少，所以一般我们会把它当作调试参数来使用，$\mathbf{P}(n)$ 是预测协方差
+这也是我们希望达成的目标。既然已经知道状态，观测向量，状态转移方程以及观测值，直接套用上述推导的更新公式即可。过程噪声协方差取 $\mathbf{Q}=\mathbf{0}$，$R$ 是测量噪声方差，值得注意的是在 ANC 领域里面我们根本不知道这个方差值是多少，所以一般我们会把它当作调试参数来使用，$\mathbf{P}(n)$ 是预测协方差
 
 $$
 \begin{aligned}
@@ -360,8 +345,6 @@ $$
 +\sum_{q=0}^{Q-1}\mathbf{k}_{lq}(n)\,\varepsilon_q(n)
 \end{aligned}
 $$
-
-$\mathbf{k}_{lq}$ 是 $\mathbf{K}$ 里扬声器 $l$ 那一块、麦克风 $q$ 那一列。一只扬声器的全部参考抽头都乘到每一只误差麦克风。$Q=1$、$L=1$、$P=1$ 时这一组和上面的单通道公式是同一个更新。延迟线的移位同样留下 $\mathbf{A}\hat{\boldsymbol{\psi}}$ 和增益项，不把扬声器样本再写进去。
 
 ## 3. 实例
 
@@ -497,7 +480,7 @@ $\mathbf{k}_{lq}$ 是 $\mathbf{K}$ 里扬声器 $l$ 的权值块、麦克风 $q$
 
 ### 4.3 仿真结果
 
-![08 卡尔曼滤波主动降噪](../output/sim/08_kfanc.png)
+![08 卡尔曼滤波主动降噪](image/08_kfanc.png)
 
 波形取记录末尾 $150\,\mathrm{ms}$。功率曲线是整段 $8\,\mathrm{s}$ 上、$0.2\,\mathrm{s}$ 滑动平均后的误差功率。功率谱取末尾 $4\,\mathrm{s}$。误差 NMSE 用末尾 $2\,\mathrm{s}$。系数取整段跑完之后的值，和 $\mathbf{b}$ 比较。
 
@@ -545,4 +528,4 @@ $$
 
 ### 5.4 与 RLS 的关系
 
-即使从两个完全不同的视角出发进行推导，最终得到的迭代公式却具备着极高的相似性。其实，本质上来讲，仅考虑最终的迭代公式，前面的 RLS 和本章的卡尔曼滤波差异似乎只在于次级路径在何处建模。
+即使从两个完全不同的视角出发进行推导，最终得到的迭代公式却具备着极高的相似性。其实，本质上来讲，仅考虑最终的迭代公式，前面的 RLS 和本章的卡尔曼滤波差异似乎只在于次级路径在何处建模，这点的影响似乎也主要在于算力。
